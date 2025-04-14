@@ -13,38 +13,49 @@
     "logo": "https://telegra.ph/file/b39906f572822b3ab82c8.jpg",
     "env": {
         "API_ID": {
-            "description": "Get this value from my.telegram.org"
+            "description": "Get this value from my.telegram.org",
+            "value": "26444821"
         },
         "API_HASH": {
-            "description": "Get this value from my.telegram.org"
+            "description": "Get this value from my.telegram.org",
+            "value": "a58efd1d6483e3f0d5b2757d9f665c24"
         },
         "BOT_TOKEN": {
-            "description": "Get this from @BotFather"
+            "description": "Get this from @BotFather",
+            "value": "7867307803:AAEESpL1nTT8PLIYYOHNyTFefHNNmsaPCdc"
         },
         "BOT_USERNAME": {
-            "description": "Your Bot Username which you sent to @BotFather (Without [@])"
+            "description": "Your Bot Username which you sent to @BotFather (Without [@])",
+            "value": "Monkey_D_Luffu_07_Bot"
         },
         "DB_CHANNEL": {
-            "description": "The Channel ID which will be used as Database. Example: -100123456789"
+            "description": "The Channel ID which will be used as Database. Example: -100123456789",
+            "value": "-1002279224745"
         },
         "SHORTLINK_URL": {
-            "description": "Your URL Shortner Domain Name"
+            "description": "Your URL Shortner Domain Name",
+            "value": "dashboard.smallshorts.com"
         },
         "SHORTLINK_API": {
-            "description": "Your Url Shortner Api Token"
+            "description": "Your Url Shortner Api Token",
+            "value": "95d94a0b5b895d08fdb5431aef1a94dfd5d6923f"
         },
         "BOT_OWNER": {
-            "description": "Bot Owner UserID"
+            "description": "Bot Owner UserID",
+            "value": "1581901379"
         },
         "DATABASE_URL": {
-            "description": "MongoDB Database URI for Saving UserID for Broadcast."
+            "description": "MongoDB Database URI for Saving UserID for Broadcast.",
+            "value": "mongodb+srv://abhay:store@store.nmvpb5w.mongodb.net/?retryWrites=true&w=majority&appName=STORE"
         },
         "UPDATES_CHANNEL": {
             "description": "ID of a Channel which you want to do Force Sub to use the bot. Example: -100123456789",
+            "value": "-1002195043297",
             "required": false
         },
         "LOG_CHANNEL": {
-            "description": "Logs Channel ID for some Tracking XD. Example: -100123456789"
+            "description": "Logs Channel ID for some Tracking XD. Example: -100123456789",
+            "value": "-1001906654783"
         }
     },
     "buildpacks": [
