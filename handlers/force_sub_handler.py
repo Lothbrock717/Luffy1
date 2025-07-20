@@ -40,20 +40,14 @@ async def handle_force_sub(bot: Client, cmd: Message):
         except Exception as err:
             print(f"Unable to do Force Subscribe to {Config.UPDATES_CHANNEL}\n\nError: {err}")
             return 200
+        btns = [[InlineKeyboardButton("🤖 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ", url=invite_link.invite_link)]]
+        if cmd.command and len(cmd.command) > 1:
+            btns.append([InlineKeyboardButton("🔄 ʀᴇꜰʀᴇꜱʜ 🔄", url=f"https://t.me/{Config.BOT_USERNAME}?start={cmd.command[1]}")])
         await bot.send_message(
             chat_id=cmd.from_user.id,
             text="**ᴘʟᴇᴀꜱᴇ ᴊᴏɪɴ ᴍʏ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ!✨**\n\n"
                  "ᴅᴜᴇ ᴛᴏ ᴏᴠᴇʀʟᴏᴀᴅ, ᴏɴʟʏ ᴄʜᴀɴɴᴇʟ ꜱᴜʙꜱᴄʀɪʙᴇʀꜱ ᴄᴀɴ ᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ!😄",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton("🤖 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ", url=invite_link.invite_link)
-                    ],
-                    [
-                        InlineKeyboardButton("🔄 ʀᴇꜰʀᴇꜱʜ 🔄", url=f"https://t.me/{Config.BOT_USERNAME}?start={cmd.command[1]}")
-                    ]
-                ]
-            )
+            reply_markup=InlineKeyboardMarkup(btns)
         )
         return 400
     except Exception:
