@@ -34,11 +34,11 @@
         },
         "SHORTLINK_URL": {
             "description": "Your URL Shortner Domain Name",
-            "value": "dashboard.smallshorts.com"
+            "value": "inshorturl.com"
         },
         "SHORTLINK_API": {
             "description": "Your Url Shortner Api Token",
-            "value": "95d94a0b5b895d08fdb5431aef1a94dfd5d6923f"
+            "value": "d44b0eb8b33485edbd05e16237d700f44c2fc331"
         },
         "BOT_OWNER": {
             "description": "Bot Owner UserID",
