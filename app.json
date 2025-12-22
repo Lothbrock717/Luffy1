@@ -50,12 +50,12 @@
         },
         "UPDATES_CHANNEL": {
             "description": "ID of a Channel which you want to do Force Sub to use the bot. Example: -100123456789",
-            "value": "-1002195043297",
+            "value": "-1002948082613",
             "required": false
         },
         "LOG_CHANNEL": {
             "description": "Logs Channel ID for some Tracking XD. Example: -100123456789",
-            "value": "-1001906654783"
+            "value": "-1002911675489"
         }
     },
     "buildpacks": [
