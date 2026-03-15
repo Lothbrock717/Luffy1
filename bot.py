@@ -144,7 +144,7 @@ async def main(bot: Client, message: Message):
                                      disable_web_page_preview=True)
             return
 
-        if message.from_user.id not in Config.BOT_ADMINS:
+        if message.from_user.id not in Config.BOT_ADMINS and message.from_user.id != Config.BOT_OWNER:
             return
         try:
             forwarded_msg = await message.forward(Config.DB_CHANNEL)
