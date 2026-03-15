@@ -127,23 +127,22 @@ async def start(bot: Client, cmd: Message):
 async def main(bot: Client, message: Message):
 
     if message.chat.type == enums.ChatType.PRIVATE:
+        try:
+            await add_user_to_database(bot, message)
 
-        await add_user_to_database(bot, message)
+            if Config.UPDATES_CHANNEL is not None:
+                back = await handle_force_sub(bot, message)
+                if back == 400:
+                    return
 
-        if Config.UPDATES_CHANNEL is not None:
-            back = await handle_force_sub(bot, message)
-            if back == 400:
+            if message.from_user.id in Config.BANNED_USERS:
+                await message.reply_text("Sorry, You are banned!\n\nContact [𝙎𝙪𝙥𝙥𝙤𝙧𝙩 𝙂𝙧𝙤𝙪𝙥](https://t.me/+RFnpSUTxnt8zYWU1)",
+                                         disable_web_page_preview=True)
                 return
 
-        if message.from_user.id in Config.BANNED_USERS:
-            await message.reply_text("Sorry, You are banned!\n\nContact [𝙎𝙪𝙥𝙥𝙤𝙧𝙩 𝙂𝙧𝙤𝙪𝙥](https://t.me/+RFnpSUTxnt8zYWU1)",
-                                     disable_web_page_preview=True)
-            return
+            if message.from_user.id not in Config.BOT_ADMINS and message.from_user.id != Config.BOT_OWNER:
+                return
 
-        if message.from_user.id not in Config.BOT_ADMINS and message.from_user.id != Config.BOT_OWNER:
-            return
-        try:
-            # Use copy_message instead of forward — works for both direct and forwarded files
             forwarded_msg = await bot.copy_message(
                 chat_id=Config.DB_CHANNEL,
                 from_chat_id=message.chat.id,
@@ -168,15 +167,6 @@ async def main(bot: Client, message: Message):
         except FloodWait as sl:
             print(f"Sleep of {sl.value}s caused by FloodWait ...")
             await asyncio.sleep(sl.value)
-            await bot.send_message(
-                chat_id=int(Config.LOG_CHANNEL),
-                text="#FloodWait:\n"
-                    f"Got FloodWait of `{str(sl.value)}s` from `{str(message.chat.id)}` !!",
-                disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(message.chat.id)}")]]
-                )
-            )
         except Exception as err:
             await message.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
