@@ -1,7 +1,5 @@
 import asyncio
-from typing import (
-    Union
-)
+from typing import Union
 from configs import Config
 from pyrogram import Client
 from pyrogram.errors import FloodWait, UserNotParticipant
@@ -19,6 +17,10 @@ async def get_invite_link(bot: Client, chat_id: Union[str, int]):
 
 
 async def handle_force_sub(bot: Client, cmd: Message):
+    # Owner always bypasses force sub
+    if cmd.from_user.id == Config.BOT_OWNER:
+        return 200
+
     if Config.UPDATES_CHANNEL and Config.UPDATES_CHANNEL.startswith("-100"):
         channel_chat_id = int(Config.UPDATES_CHANNEL)
     elif Config.UPDATES_CHANNEL and (not Config.UPDATES_CHANNEL.startswith("-100")):
@@ -41,8 +43,10 @@ async def handle_force_sub(bot: Client, cmd: Message):
             print(f"Unable to do Force Subscribe to {Config.UPDATES_CHANNEL}\n\nError: {err}")
             return 200
         btns = [[InlineKeyboardButton("🤖 ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ", url=invite_link.invite_link)]]
-        if cmd.command and len(cmd.command) > 1:
-            btns.append([InlineKeyboardButton("🔄 ʀᴇꜰʀᴇꜱʜ 🔄", url=f"https://t.me/{Config.BOT_USERNAME}?start={cmd.command[1]}")])
+        # Safe check — cmd.command only exists on text messages, not media
+        cmd_list = getattr(cmd, "command", None)
+        if cmd_list and len(cmd_list) > 1:
+            btns.append([InlineKeyboardButton("🔄 ʀᴇꜰʀᴇꜱʜ 🔄", url=f"https://t.me/{Config.BOT_USERNAME}?start={cmd_list[1]}")])
         await bot.send_message(
             chat_id=cmd.from_user.id,
             text="**ᴘʟᴇᴀꜱᴇ ᴊᴏɪɴ ᴍʏ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ʙᴏᴛ!✨**\n\n"
@@ -51,10 +55,5 @@ async def handle_force_sub(bot: Client, cmd: Message):
         )
         return 400
     except Exception:
-        await bot.send_message(
-            chat_id=cmd.from_user.id,
-            text="Thank you [𝖧𝖺𝗏𝖾 𝖽𝗈𝗎𝖻𝗍𝗌? 𝖥𝖾𝖾𝗅 𝖿𝗋𝖾𝖾 𝗍𝗈 𝖼𝗈𝗇𝗍𝖺𝖼𝗍 𝗈𝗎𝗋 𝖺𝖽𝗆𝗂𝗇 𝗍𝖾𝖺𝗆 𝖶𝖾'𝗋𝖾 𝗁𝖾𝗋𝖾 𝗍𝗈 𝗁𝖾𝗅𝗉!](https://t.me/+HtOD0pls8kY3Njc9).",
-            disable_web_page_preview=True
-        )
         return 200
     return 200
