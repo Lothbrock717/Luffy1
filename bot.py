@@ -40,15 +40,17 @@ from handlers.send_file import delete_after_delay
 
 MediaList = {}
 
-# Queue to process files in strict order
-_file_queue = asyncio.Queue()
-_queue_running = False
+# Batch collector: gather files sent together, sort by message_id, then process in order
+_pending_files = []
+_collect_task = None
 
-async def process_file_queue(bot):
-    global _queue_running
-    _queue_running = True
-    while not _file_queue.empty():
-        message = await _file_queue.get()
+async def process_pending_files(bot):
+    global _collect_task, _pending_files
+    await asyncio.sleep(2)  # wait 2 seconds to collect all files
+    files = sorted(_pending_files, key=lambda m: m.id)  # sort by message ID = original send order
+    _pending_files = []
+    _collect_task = None
+    for message in files:
         try:
             forwarded_msg = await message.forward(Config.DB_CHANNEL)
             file_er_id = str(forwarded_msg.id)
@@ -71,8 +73,6 @@ async def process_file_queue(bot):
             await asyncio.sleep(sl.value)
         except Exception as err:
             await message.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
-        _file_queue.task_done()
-    _queue_running = False
 batch = False
 batch_files = {}
 
@@ -180,10 +180,12 @@ async def main(bot: Client, message: Message):
 
         if message.from_user.id not in Config.BOT_ADMINS and message.from_user.id != Config.BOT_OWNER:
             return
-        # Queue file for ordered processing
-        await _file_queue.put(message)
-        if not _queue_running:
-            bot_loop.create_task(process_file_queue(bot))
+        # Add to pending list and (re)start the 2-second collection window
+        global _collect_task, _pending_files
+        _pending_files.append(message)
+        if _collect_task is not None:
+            _collect_task.cancel()
+        _collect_task = bot_loop.create_task(process_pending_files(bot))
        
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat:
