@@ -98,7 +98,7 @@ async def start(bot: Client, cmd: Message):
         )
     elif cmd.command[1].startswith('batch'):
         _, files_id = cmd.command[1].split('-', 1)
-        # FIX: IDs stored as space-separated list — no range guessing, every file is explicit
+        # IDs are stored as space-separated list - no range guessing, every file is explicit
         msg_ids = b64_to_str(files_id).split(' ')
         for msg_id in msg_ids:
             await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
@@ -147,7 +147,12 @@ async def main(bot: Client, message: Message):
         if message.from_user.id not in Config.BOT_ADMINS:
             return
         try:
-            forwarded_msg = await message.forward(Config.DB_CHANNEL)
+            # Use copy_message instead of forward — works for both direct and forwarded files
+            forwarded_msg = await bot.copy_message(
+                chat_id=Config.DB_CHANNEL,
+                from_chat_id=message.chat.id,
+                message_id=message.id
+            )
             file_er_id = str(forwarded_msg.id)
             await forwarded_msg.reply_text(
                 f"#PRIVATE_FILE:\n\n[{message.from_user.first_name}](tg://user?id={message.from_user.id}) Got File Link!",
@@ -155,33 +160,33 @@ async def main(bot: Client, message: Message):
             share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=F2Botz_{str_to_b64(file_er_id)}"
             short_link = get_short(share_link)
             await message.reply(
-            "**Your File Stored in my Database!**\n\n"
-            f"Here is the Permanent Link of your file: <code>{short_link}</code> \n\n"
-            "Just Click the link to get your file!",
-            reply_markup=InlineKeyboardMarkup(
-               [[InlineKeyboardButton("ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ", url=share_link),
-                  InlineKeyboardButton("ꜱʜᴏʀᴛ ʟɪɴᴋ", url=short_link)]]
-            ),
-            disable_web_page_preview=True,quote=True
-        )
-        except FloodWait as sl:
-            if sl.value > 45:
-                print(f"Sleep of {sl.value}s caused by FloodWait ...")
-                await asyncio.sleep(sl.value)
-                await bot.send_message(
-                    chat_id=int(Config.LOG_CHANNEL),
-                    text="#FloodWait:\n"
-                        f"Got FloodWait of `{str(sl.value)}s` from `{str(message.chat.id)}` !!",
-                    disable_web_page_preview=True,
+                "**Your File Stored in my Database!**\n\n"
+                f"Here is the Permanent Link of your file: <code>{short_link}</code> \n\n"
+                "Just Click the link to get your file!",
                 reply_markup=InlineKeyboardMarkup(
-                    [
-                        [InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(message.chat.id)}")]
-                    ]
+                    [[InlineKeyboardButton("ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ", url=share_link),
+                      InlineKeyboardButton("ꜱʜᴏʀᴛ ʟɪɴᴋ", url=short_link)]]
+                ),
+                disable_web_page_preview=True, quote=True
+            )
+        except FloodWait as sl:
+            print(f"Sleep of {sl.value}s caused by FloodWait ...")
+            await asyncio.sleep(sl.value)
+            await bot.send_message(
+                chat_id=int(Config.LOG_CHANNEL),
+                text="#FloodWait:\n"
+                    f"Got FloodWait of `{str(sl.value)}s` from `{str(message.chat.id)}` !!",
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(message.chat.id)}")]]
                 )
             )
-       
+        except Exception as err:
+            await message.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
+
     elif message.chat.type == enums.ChatType.CHANNEL:
-        if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat or message.forward_from:
+        # Only skip messages forwarded by the bot itself (loop prevention) — NOT user-forwarded files
+        if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat:
             return
         elif int(message.chat.id) in Config.BANNED_CHAT_IDS:
             await bot.leave_chat(message.chat.id)
@@ -238,11 +243,9 @@ async def copy_message(msg):
         await asyncio.sleep(sl.value)
         return await copy_message(msg)
 
-# FIX: Removed @new_task decorator — it caused the handler to return before finishing,
-# so filters.user() never had a chance to block non-owners properly.
-# Also fixed: all message IDs stored explicitly to avoid missing files.
 @Bot.on_message(filters.command("batch") & filters.private & filters.user(Config.BOT_OWNER))
-async def batch_cmd(client, m: Message):
+@new_task
+async def batch_files(client, m: Message):
     t = await m.reply("Now Start send files\n\nuse /cancel or /done")
     messages = await receive_files(client, m)
     await t.delete()
@@ -252,10 +255,11 @@ async def batch_cmd(client, m: Message):
     for message in messages:
         temp = await copy_message(message)
         all_msg_ids.append(str(temp.id))
-    # Store all IDs explicitly (space-separated) — no start/end range guessing
+    # Store all IDs explicitly (space-separated) to avoid gaps from non-consecutive Telegram message IDs
     files_id = f"batch-{str_to_b64(' '.join(all_msg_ids))}"
     share_link = f"https://t.me/{Config.BOT_USERNAME}?start={files_id}"
     await m.reply(f"Here is ur link : {share_link}\n\n<code>{get_short(share_link)}</code>")
+
 
 
 @Bot.on_message(filters.private & filters.command("ban_user") & filters.user(Config.BOT_OWNER))
@@ -409,6 +413,9 @@ async def button(bot: Client, cmd: CallbackQuery):
                        
                         InlineKeyboardButton("ᴄʟᴏꜱᴇ 🚪", callback_data="closeMessage")
                     ],
+                    
+                       
+                       
                 ]
             )
         )
