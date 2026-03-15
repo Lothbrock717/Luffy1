@@ -98,9 +98,10 @@ async def start(bot: Client, cmd: Message):
         )
     elif cmd.command[1].startswith('batch'):
         _, files_id = cmd.command[1].split('-', 1)
-        start_msg, end_msg = b64_to_str(files_id).split('-', 1)
-        for i in range(int(start_msg), int(end_msg)+1):
-            await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=i)
+        # FIX: IDs stored as space-separated list — no range guessing, every file is explicit
+        msg_ids = b64_to_str(files_id).split(' ')
+        for msg_id in msg_ids:
+            await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
         return
 
     else:
@@ -237,26 +238,24 @@ async def copy_message(msg):
         await asyncio.sleep(sl.value)
         return await copy_message(msg)
 
+# FIX: Removed @new_task decorator — it caused the handler to return before finishing,
+# so filters.user() never had a chance to block non-owners properly.
+# Also fixed: all message IDs stored explicitly to avoid missing files.
 @Bot.on_message(filters.command("batch") & filters.private & filters.user(Config.BOT_OWNER))
-@new_task
-async def batch_files(client, m: Message):
+async def batch_cmd(client, m: Message):
     t = await m.reply("Now Start send files\n\nuse /cancel or /done")
     messages = await receive_files(client, m)
     await t.delete()
     if not messages:
         return
-    start_msg = end_msg = temp = None
-    is_start_msg = True
+    all_msg_ids = []
     for message in messages:
         temp = await copy_message(message)
-        if is_start_msg:
-            start_msg = temp.id
-            is_start_msg = False
-    end_msg = temp.id
-    files_id = f"batch-{str_to_b64(f'{start_msg}-{end_msg}')}"
+        all_msg_ids.append(str(temp.id))
+    # Store all IDs explicitly (space-separated) — no start/end range guessing
+    files_id = f"batch-{str_to_b64(' '.join(all_msg_ids))}"
     share_link = f"https://t.me/{Config.BOT_USERNAME}?start={files_id}"
     await m.reply(f"Here is ur link : {share_link}\n\n<code>{get_short(share_link)}</code>")
-
 
 
 @Bot.on_message(filters.private & filters.command("ban_user") & filters.user(Config.BOT_OWNER))
@@ -410,9 +409,6 @@ async def button(bot: Client, cmd: CallbackQuery):
                        
                         InlineKeyboardButton("ᴄʟᴏꜱᴇ 🚪", callback_data="closeMessage")
                     ],
-                    
-                       
-                       
                 ]
             )
         )
