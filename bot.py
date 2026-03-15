@@ -123,11 +123,12 @@ async def start(bot: Client, cmd: Message):
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
 
-@Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
+@Bot.on_message(filters.document | filters.video | filters.audio | filters.photo)
 async def main(bot: Client, message: Message):
 
-    # DEBUG: confirm handler is reached
-    await message.reply_text(f"DEBUG: handler reached | chat_type={message.chat.type} | from_user={message.from_user.id if message.from_user else 'None'} | BOT_OWNER={Config.BOT_OWNER} | BOT_ADMINS={Config.BOT_ADMINS}")
+    # Skip if message is from DB_CHANNEL directly
+    if message.chat.id == Config.DB_CHANNEL:
+        return
 
     if message.chat.type == enums.ChatType.PRIVATE:
         try:
