@@ -39,6 +39,40 @@ from handlers.file_receiver import receive_files
 from handlers.send_file import delete_after_delay
 
 MediaList = {}
+
+# Queue to process files in strict order
+_file_queue = asyncio.Queue()
+_queue_running = False
+
+async def process_file_queue(bot):
+    global _queue_running
+    _queue_running = True
+    while not _file_queue.empty():
+        message = await _file_queue.get()
+        try:
+            forwarded_msg = await message.forward(Config.DB_CHANNEL)
+            file_er_id = str(forwarded_msg.id)
+            await forwarded_msg.reply_text(
+                f"#PRIVATE_FILE:\n\n[{message.from_user.first_name}](tg://user?id={message.from_user.id}) Got File Link!",
+                disable_web_page_preview=True)
+            share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=F2Botz_{str_to_b64(file_er_id)}"
+            short_link = get_short(share_link)
+            await message.reply(
+                "**Your File Stored in my Database!**\n\n"
+                f"Here is the Permanent Link of your file: <code>{short_link}</code> \n\n"
+                "Just Click the link to get your file!",
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ", url=share_link),
+                      InlineKeyboardButton("ꜱʜᴏʀᴛ ʟɪɴᴋ", url=short_link)]]
+                ),
+                disable_web_page_preview=True, quote=True
+            )
+        except FloodWait as sl:
+            await asyncio.sleep(sl.value)
+        except Exception as err:
+            await message.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
+        _file_queue.task_done()
+    _queue_running = False
 batch = False
 batch_files = {}
 
@@ -146,39 +180,10 @@ async def main(bot: Client, message: Message):
 
         if message.from_user.id not in Config.BOT_ADMINS and message.from_user.id != Config.BOT_OWNER:
             return
-        try:
-            forwarded_msg = await message.forward(Config.DB_CHANNEL)
-            file_er_id = str(forwarded_msg.id)
-            await forwarded_msg.reply_text(
-                f"#PRIVATE_FILE:\n\n[{message.from_user.first_name}](tg://user?id={message.from_user.id}) Got File Link!",
-                disable_web_page_preview=True)
-            share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=F2Botz_{str_to_b64(file_er_id)}"
-            short_link = get_short(share_link)
-            await message.reply(
-            "**Your File Stored in my Database!**\n\n"
-            f"Here is the Permanent Link of your file: <code>{short_link}</code> \n\n"
-            "Just Click the link to get your file!",
-            reply_markup=InlineKeyboardMarkup(
-               [[InlineKeyboardButton("ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ", url=share_link),
-                  InlineKeyboardButton("ꜱʜᴏʀᴛ ʟɪɴᴋ", url=short_link)]]
-            ),
-            disable_web_page_preview=True,quote=True
-        )
-        except FloodWait as sl:
-            if sl.value > 45:
-                print(f"Sleep of {sl.value}s caused by FloodWait ...")
-                await asyncio.sleep(sl.value)
-                await bot.send_message(
-                    chat_id=int(Config.LOG_CHANNEL),
-                    text="#FloodWait:\n"
-                        f"Got FloodWait of `{str(sl.value)}s` from `{str(message.chat.id)}` !!",
-                    disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [InlineKeyboardButton("Ban User", callback_data=f"ban_user_{str(message.chat.id)}")]
-                    ]
-                )
-            )
+        # Queue file for ordered processing
+        await _file_queue.put(message)
+        if not _queue_running:
+            bot_loop.create_task(process_file_queue(bot))
        
     elif message.chat.type == enums.ChatType.CHANNEL:
         if (message.chat.id == int(Config.LOG_CHANNEL)) or (message.chat.id == int(Config.UPDATES_CHANNEL)) or message.forward_from_chat:
