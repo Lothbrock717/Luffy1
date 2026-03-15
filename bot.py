@@ -62,10 +62,6 @@ Bot = Client(
 )
 
 
-@Bot.on_message(filters.private)
-async def _(bot: Client, cmd: Message):
-    await handle_user_status(bot, cmd)
-
 @Bot.on_message(filters.command("start") & filters.private)
 async def start(bot: Client, cmd: Message):
 
@@ -127,7 +123,7 @@ async def start(bot: Client, cmd: Message):
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
 
-@Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL), group=-1)
+@Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
 
     if message.chat.type == enums.ChatType.PRIVATE:
