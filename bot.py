@@ -126,6 +126,9 @@ async def start(bot: Client, cmd: Message):
 @Bot.on_message((filters.document | filters.video | filters.audio | filters.photo) & ~filters.chat(Config.DB_CHANNEL))
 async def main(bot: Client, message: Message):
 
+    # DEBUG: confirm handler is reached
+    await message.reply_text(f"DEBUG: handler reached | chat_type={message.chat.type} | from_user={message.from_user.id if message.from_user else 'None'} | BOT_OWNER={Config.BOT_OWNER} | BOT_ADMINS={Config.BOT_ADMINS}")
+
     if message.chat.type == enums.ChatType.PRIVATE:
         try:
             await add_user_to_database(bot, message)
