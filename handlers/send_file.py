@@ -14,10 +14,10 @@ def clean_caption(caption: str) -> str:
     """Remove all @username mentions from a caption."""
     if not caption:
         return ""
-    # Remove @username patterns (letters, digits, underscores after @)
-    cleaned = re.sub(r'@\w+', '', caption)
-    # Clean up leftover blank lines and strip edges
-    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    # Remove @username and any surrounding whitespace/newlines on that line
+    cleaned = re.sub(r'@\w+\s*\n?', '', caption)
+    # Collapse multiple blank lines into one
+    cleaned = re.sub(r'\n{2,}', '\n', cleaned)
     return cleaned.strip()
 
 
