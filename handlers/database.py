@@ -9,6 +9,7 @@ class Database:
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
         self.col = self.db.users
+        self.settings = self.db.settings
 
     def new_user(self, id):
         return dict(
@@ -72,6 +73,20 @@ class Database:
     async def get_all_banned_users(self):
         banned_users = self.col.find({'ban_status.is_banned': True})
         return banned_users
+
+    async def set_prefix(self, prefix: str):
+        await self.settings.update_one(
+            {'_id': 'prefix'},
+            {'$set': {'value': prefix}},
+            upsert=True
+        )
+
+    async def get_prefix(self) -> str:
+        doc = await self.settings.find_one({'_id': 'prefix'})
+        return doc['value'] if doc else ""
+
+    async def remove_prefix(self):
+        await self.settings.delete_one({'_id': 'prefix'})
 
 
 db = Database(Config.DATABASE_URL, Config.BOT_USERNAME)
