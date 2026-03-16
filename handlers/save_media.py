@@ -1,5 +1,5 @@
 import asyncio
-import requests
+import aiohttp
 import string
 import random
 from configs import Config
@@ -18,13 +18,17 @@ def generate_random_alphanumeric():
     random_chars = ''.join(random.choice(characters) for _ in range(8))
     return random_chars
 
-def get_short(url):
-    rget = requests.get(f"https://{Config.SHORTLINK_URL}/api?api={Config.SHORTLINK_API}&url={url}&alias={generate_random_alphanumeric()}")
-    rjson = rget.json()
-    if rjson["status"] == "success" or rget.status_code == 200:
-        return rjson["shortenedUrl"]
-    else:
-        return url
+async def get_short(url):
+    try:
+        async with aiohttp.ClientSession() as session:
+            api_url = f"https://{Config.SHORTLINK_URL}/api?api={Config.SHORTLINK_API}&url={url}&alias={generate_random_alphanumeric()}"
+            async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                rjson = await resp.json()
+                if rjson.get("status") == "success" or resp.status == 200:
+                    return rjson.get("shortenedUrl", url)
+    except Exception:
+        pass
+    return url
 
     
 async def forward_to_channel(bot: Client, message: Message, editable: Message):
