@@ -19,6 +19,7 @@ def clean_caption(caption: str) -> str:
     lines = [line for line in lines if not re.fullmatch(r'\s*@\w+\s*', line)]
     # Remove inline @usernames
     lines = [re.sub(r'@\w+', '', line) for line in lines]
+    lines = [line.replace('\u200b', '').replace('\u200c', '').replace('\u200d', '') for line in lines]
     # Clean up leftover leading separators like " - " or " | " at start of line
     lines = [re.sub(r'^[\s\-|]+', '', line) for line in lines]
     # Remove lines that are empty or whitespace only
@@ -45,14 +46,11 @@ async def media_forward(bot: Client, user_id: int, file_id: int, prefix: str = "
         original_caption = original.caption or ""
 
         # Strip existing @usernames, then prepend our prefix
-        print(f"DEBUG original_caption: {repr(original_caption)}", flush=True)
         cleaned = clean_caption(original_caption)
-        print(f"DEBUG cleaned: {repr(cleaned)}", flush=True)
         if prefix:
-            new_caption = f"{prefix}\n{cleaned}" if cleaned else prefix
+            new_caption = f"{prefix} {cleaned}" if cleaned else prefix
         else:
             new_caption = cleaned if cleaned else None
-        print(f"DEBUG new_caption: {repr(new_caption)}", flush=True)
 
         if Config.FORWARD_AS_COPY is True:
             return await bot.copy_message(
