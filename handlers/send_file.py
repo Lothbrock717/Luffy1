@@ -11,16 +11,18 @@ from handlers.helpers import str_to_b64
 
 
 def clean_caption(caption: str) -> str:
-    """Remove all @username mentions and collapse extra blank lines."""
+    """Remove all @username mentions and cleanup leftover separators."""
     if not caption:
         return ""
-    # Remove lines that are ONLY a @username (with optional spaces)
     lines = caption.splitlines()
+    # Remove lines that are only a @username
     lines = [line for line in lines if not re.fullmatch(r'\s*@\w+\s*', line)]
-    # Also remove inline @usernames within other lines
+    # Remove inline @usernames
     lines = [re.sub(r'@\w+', '', line) for line in lines]
-    # Remove lines that became empty after inline removal (including whitespace-only lines)
-    lines = [line for line in lines if line.strip() and line.strip() != '\u200b']
+    # Clean up leftover leading separators like " - " or " | " at start of line
+    lines = [re.sub(r'^[\s\-|]+', '', line) for line in lines]
+    # Remove lines that are empty or whitespace only
+    lines = [line for line in lines if line.strip()]
     return '\n'.join(lines).strip()
 
 
@@ -43,14 +45,11 @@ async def media_forward(bot: Client, user_id: int, file_id: int, prefix: str = "
         original_caption = original.caption or ""
 
         # Strip existing @usernames, then prepend our prefix
-        print(f"DEBUG original_caption: {repr(original_caption)}")
         cleaned = clean_caption(original_caption)
-        print(f"DEBUG cleaned: {repr(cleaned)}")
         if prefix:
             new_caption = f"{prefix}\n{cleaned}" if cleaned else prefix
         else:
             new_caption = cleaned if cleaned else None
-        print(f"DEBUG new_caption: {repr(new_caption)}")
 
         if Config.FORWARD_AS_COPY is True:
             return await bot.copy_message(
