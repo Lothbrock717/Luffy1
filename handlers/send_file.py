@@ -11,14 +11,17 @@ from handlers.helpers import str_to_b64
 
 
 def clean_caption(caption: str) -> str:
-    """Remove all @username mentions from a caption."""
+    """Remove all @username mentions and collapse extra blank lines."""
     if not caption:
         return ""
-    # Remove @username and any surrounding whitespace/newlines on that line
-    cleaned = re.sub(r'@\w+\s*\n?', '', caption)
-    # Collapse multiple blank lines into one
-    cleaned = re.sub(r'\n{2,}', '\n', cleaned)
-    return cleaned.strip()
+    # Remove lines that are ONLY a @username (with optional spaces)
+    lines = caption.splitlines()
+    lines = [line for line in lines if not re.fullmatch(r'\s*@\w+\s*', line)]
+    # Also remove inline @usernames within other lines
+    lines = [re.sub(r'@\w+', '', line) for line in lines]
+    # Remove lines that became empty after inline removal
+    lines = [line for line in lines if line.strip()]
+    return '\n'.join(lines).strip()
 
 
 async def reply_forward(message: Message, file_id: int):
