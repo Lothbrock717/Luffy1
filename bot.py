@@ -46,7 +46,7 @@ _collect_task = None
 
 async def process_pending_files(bot):
     global _collect_task, _pending_files
-    await asyncio.sleep(2)  # wait 2 seconds to collect all files
+    await asyncio.sleep(0.5)  # wait 0.5 seconds to collect all files
     files = sorted(_pending_files, key=lambda m: m.id)  # sort by message ID = original send order
     _pending_files = []
     _collect_task = None
@@ -58,7 +58,7 @@ async def process_pending_files(bot):
                 f"#PRIVATE_FILE:\n\n[{message.from_user.first_name}](tg://user?id={message.from_user.id}) Got File Link!",
                 disable_web_page_preview=True)
             share_link = f"https://telegram.me/{Config.BOT_USERNAME}?start=F2Botz_{str_to_b64(file_er_id)}"
-            short_link = get_short(share_link)
+            short_link = await get_short(share_link)
             await message.reply(
                 "**Your File Stored in my Database!**\n\n"
                 f"Here is the Permanent Link of your file: <code>{short_link}</code> \n\n"
@@ -290,7 +290,8 @@ async def batch_files(client, m: Message):
     # Store all IDs explicitly (space-separated) to avoid gaps from non-consecutive Telegram message IDs
     files_id = f"batch-{str_to_b64(' '.join(all_msg_ids))}"
     share_link = f"https://t.me/{Config.BOT_USERNAME}?start={files_id}"
-    await m.reply(f"Here is ur link : {share_link}\n\n<code>{get_short(share_link)}</code>")
+    short_link = await get_short(share_link)
+    await m.reply(f"Here is ur link : {share_link}\n\n<code>{short_link}</code>")
 
 
 
