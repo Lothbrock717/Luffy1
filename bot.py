@@ -132,10 +132,10 @@ async def start(bot: Client, cmd: Message):
         )
     elif cmd.command[1].startswith('batch'):
         _, files_id = cmd.command[1].split('-', 1)
-        # IDs are stored as space-separated list - no range guessing, every file is explicit
         msg_ids = b64_to_str(files_id).split(' ')
+        prefix = await db.get_prefix()
         for msg_id in msg_ids:
-            await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id))
+            await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id), prefix=prefix)
         return
 
     else:
@@ -155,8 +155,9 @@ async def start(bot: Client, cmd: Message):
                 )
             else:
                 message_ids.append(int(GetMessage.id))
+            prefix = await db.get_prefix()
             for i in range(len(message_ids)):
-                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]))
+                await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(message_ids[i]), prefix=prefix)
         except Exception as err:
             await cmd.reply_text(f"Something went wrong!\n\n**Error:** `{err}`")
 
@@ -224,6 +225,35 @@ async def main(bot: Client, message: Message):
                 text=f"#ERROR_TRACEBACK:\nGot Error from `{str(message.chat.id)}` !!\n\n**Traceback:** `{err}`",
                 disable_web_page_preview=True
             )
+
+
+@Bot.on_message(filters.private & filters.command("setprefix") & filters.user(Config.BOT_OWNER))
+async def set_prefix_cmd(bot: Client, m: Message):
+    if len(m.command) < 2:
+        await m.reply_text(
+            "**Usage:** `/setprefix <your prefix text>`\n\n"
+            "Example: `/setprefix @MyChannel | Powered by MyBot`",
+            quote=True
+        )
+        return
+    prefix = m.text.split(None, 1)[1].strip()
+    await db.set_prefix(prefix)
+    await m.reply_text(f"✅ **Prefix set successfully!**\n\n`{prefix}`", quote=True)
+
+
+@Bot.on_message(filters.private & filters.command("removeprefix") & filters.user(Config.BOT_OWNER))
+async def remove_prefix_cmd(bot: Client, m: Message):
+    await db.remove_prefix()
+    await m.reply_text("✅ **Prefix removed.** Files will be sent with their original captions.", quote=True)
+
+
+@Bot.on_message(filters.private & filters.command("getprefix") & filters.user(Config.BOT_OWNER))
+async def get_prefix_cmd(bot: Client, m: Message):
+    prefix = await db.get_prefix()
+    if prefix:
+        await m.reply_text(f"**Current prefix:**\n\n`{prefix}`", quote=True)
+    else:
+        await m.reply_text("ℹ️ No prefix is currently set.", quote=True)
 
 
 @Bot.on_message(filters.private & filters.command("broadcast") & filters.user(Config.BOT_OWNER) & filters.reply)
