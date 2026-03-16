@@ -19,8 +19,8 @@ def clean_caption(caption: str) -> str:
     lines = [line for line in lines if not re.fullmatch(r'\s*@\w+\s*', line)]
     # Also remove inline @usernames within other lines
     lines = [re.sub(r'@\w+', '', line) for line in lines]
-    # Remove lines that became empty after inline removal
-    lines = [line for line in lines if line.strip()]
+    # Remove lines that became empty after inline removal (including whitespace-only lines)
+    lines = [line for line in lines if line.strip() and line.strip() != '\u200b']
     return '\n'.join(lines).strip()
 
 
