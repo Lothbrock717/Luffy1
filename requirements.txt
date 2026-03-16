@@ -2,6 +2,7 @@ pyrofork
 TgCrypto-pyrofork
 motor
 aiofiles
+aiohttp
 dnspython
 psutil
 render
@@ -11,4 +12,3 @@ gunicorn==20.1.0
 Jinja2==3.0.3
 werkzeug==2.0.2
 itsdangerous==2.0.1
-
