@@ -52,7 +52,11 @@ async def process_pending_files(bot):
     _collect_task = None
     for message in files:
         try:
-            forwarded_msg = await message.forward(Config.DB_CHANNEL)
+            forwarded_msg = await bot.copy_message(
+                chat_id=Config.DB_CHANNEL,
+                from_chat_id=message.chat.id,
+                message_id=message.id
+            )
             file_er_id = str(forwarded_msg.id)
             await forwarded_msg.reply_text(
                 f"#PRIVATE_FILE:\n\n[{message.from_user.first_name}](tg://user?id={message.from_user.id}) Got File Link!",
