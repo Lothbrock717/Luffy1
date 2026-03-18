@@ -136,7 +136,16 @@ async def start(bot: Client, cmd: Message):
         )
     elif cmd.command[1].startswith('batch'):
         _, files_id = cmd.command[1].split('-', 1)
-        msg_ids = b64_to_str(files_id).split(' ')
+        decoded = b64_to_str(files_id)
+        # Handle old range format "18-20" and new space-separated format "18 19 20"
+        if ' ' in decoded:
+            msg_ids = decoded.split(' ')
+        elif '-' in decoded:
+            parts = decoded.split('-')
+            start, end = int(parts[0]), int(parts[1])
+            msg_ids = [str(i) for i in range(start, end + 1)]
+        else:
+            msg_ids = [decoded]
         prefix = await db.get_prefix()
         for msg_id in msg_ids:
             await send_media_and_reply(bot, user_id=cmd.from_user.id, file_id=int(msg_id), prefix=prefix)
